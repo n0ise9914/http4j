@@ -19,7 +19,7 @@ public class HttpClient {
             return this;
         }
 
-        public Builder disableDefaultHeaders(Integer retries) {
+        public Builder disableDefaultHeaders() {
             setting.disableDefaultHeaders();
             return this;
         }
