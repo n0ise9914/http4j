@@ -2,7 +2,7 @@ package com.http4j;
 
 public class HttpClient {
 
-    static final class Builder {
+    public static final class Builder {
         private final ClientSetting setting;
 
         public Builder() {
@@ -43,6 +43,10 @@ public class HttpClient {
 
     private HttpClient(ClientSetting setting) {
         this.setting = setting;
+    }
+
+    public static Builder builder(){
+        return new Builder();
     }
 
     public HttpRequest post(String url) {
