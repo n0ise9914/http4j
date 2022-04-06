@@ -34,6 +34,11 @@ public class HttpClient {
             return this;
         }
 
+        public Builder proxy(String proxy) {
+            setting.setProxy(proxy);
+            return this;
+        }
+
         public HttpClient build() {
             return new HttpClient(setting);
         }

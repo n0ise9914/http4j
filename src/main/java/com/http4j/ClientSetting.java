@@ -10,6 +10,15 @@ public class ClientSetting {
     protected Integer readTimeout;
     protected Boolean disableDefaultHeaders;
     private Map<String, String> headers;
+    private String proxy;
+
+    public String getProxy() {
+        return proxy;
+    }
+
+    public void setProxy(String proxy) {
+        this.proxy = proxy;
+    }
 
     public ClientSetting() {
         disableDefaultHeaders = false;

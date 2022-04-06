@@ -76,6 +76,11 @@ public class HttpRequest {
         return this;
     }
 
+    public HttpRequest proxy(String proxy) {
+        requestSetting.setProxy(proxy);
+        return this;
+    }
+
     private int myRetries;
 
     public HttpResponse execute() {
@@ -90,9 +95,10 @@ public class HttpRequest {
                 headers.put("Content-Length", body == null ? "0" : String.valueOf(body.length));
             }
             URL _url = new URL(getUrl());
-            if (requestSetting.getProxy() != null && requestSetting.getProxy().contains(":")) {
-                String[] proxyStr = requestSetting.getProxy().split(":");
-                Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyStr[0], Integer.parseInt(proxyStr[1])));
+            String proxyStr = getProxy();
+            if (proxyStr != null && proxyStr.contains(":")) {
+                String[] proxyArr = requestSetting.getProxy().split(":");
+                Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyArr[0], Integer.parseInt(proxyArr[1])));
                 con = (HttpURLConnection) _url.openConnection(proxy);
             } else {
                 con = (HttpURLConnection) _url.openConnection();
@@ -149,6 +155,16 @@ public class HttpRequest {
             return execute();
         }
         return resp;
+    }
+
+    private String getProxy() {
+        String proxy = null;
+        if (requestSetting.getProxy() != null && requestSetting.getProxy().contains(":")) {
+            proxy = requestSetting.getProxy();
+        } else if (clientSetting.getProxy() != null && clientSetting.getProxy().contains(":")) {
+            proxy = clientSetting.getProxy();
+        }
+        return proxy;
     }
 
     private Map<String, String> getHeaders() {
