@@ -12,16 +12,16 @@ public class ClientSetting {
     private Map<String, String> headers;
     private String proxy;
 
+    public ClientSetting() {
+        disableDefaultHeaders = false;
+    }
+
     public String getProxy() {
         return proxy;
     }
 
     public void setProxy(String proxy) {
         this.proxy = proxy;
-    }
-
-    public ClientSetting() {
-        disableDefaultHeaders = false;
     }
 
     public Boolean shouldDisableDefaultHeaders() {
@@ -48,20 +48,20 @@ public class ClientSetting {
         this.readTimeout = readTimeout;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public void setRetries(Integer retries) {
-        this.retries = retries;
-    }
-
     public String getUrl() {
         return url;
     }
 
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
     public Integer getRetries() {
         return retries;
+    }
+
+    public void setRetries(Integer retries) {
+        this.retries = retries;
     }
 
     public Map<String, String> getHeaders() {

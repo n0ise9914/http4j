@@ -12,6 +12,7 @@ public class HttpRequest {
 
     private final RequestSetting requestSetting;
     private final ClientSetting clientSetting;
+    private int myRetries;
 
     public HttpRequest(ClientSetting clientSetting, RequestSetting requestSetting) {
         this.clientSetting = clientSetting;
@@ -80,8 +81,6 @@ public class HttpRequest {
         requestSetting.setProxy(proxy);
         return this;
     }
-
-    private int myRetries;
 
     public HttpResponse execute() {
         HttpResponse resp = new HttpResponse();
