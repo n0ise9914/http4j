@@ -1,10 +1,13 @@
 package com.http4j;
 
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.Map;
 
 public class RequestSetting extends ClientSetting {
 
     private String method;
+    private String proxy;
     private Map<String, String> urlParameters;
     private Map<String, String> multipart;
     private byte[] body;
@@ -48,5 +51,13 @@ public class RequestSetting extends ClientSetting {
 
     public void setSkipResponseBody(boolean skipResponseBody) {
         this.skipResponseBody = skipResponseBody;
+    }
+
+    public String getProxy() {
+        return proxy;
+    }
+
+    public void setProxy(String proxy) {
+        this.proxy = proxy;
     }
 }

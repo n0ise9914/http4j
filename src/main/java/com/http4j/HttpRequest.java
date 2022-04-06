@@ -2,9 +2,7 @@ package com.http4j;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -92,7 +90,13 @@ public class HttpRequest {
                 headers.put("Content-Length", body == null ? "0" : String.valueOf(body.length));
             }
             URL _url = new URL(getUrl());
-            con = (HttpURLConnection) _url.openConnection();
+            if (requestSetting.getProxy() != null && requestSetting.getProxy().contains(":")) {
+                String[] proxyStr = requestSetting.getProxy().split(":");
+                Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyStr[0], Integer.parseInt(proxyStr[1])));
+                con = (HttpURLConnection) _url.openConnection(proxy);
+            } else {
+                con = (HttpURLConnection) _url.openConnection();
+            }
             for (Map.Entry<String, String> header : headers.entrySet()) {
                 con.setRequestProperty(header.getKey(), header.getValue());
             }
