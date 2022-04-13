@@ -1,6 +1,5 @@
 package com.http4j;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -87,6 +86,7 @@ public class HttpRequest {
         HttpURLConnection con = null;
         String method = requestSetting.getMethod();
         Map<String, String> headers = getHeaders();
+        //long startTime = Instant.now().getEpochSecond();
         try {
             appendMultipart();
             byte[] body = this.requestSetting.getBody();
@@ -127,6 +127,7 @@ public class HttpRequest {
                 con.getInputStream().close();
             }
             //con.getErrorStream();
+            resp.status = con.getResponseCode();
             resp.headers = con.getHeaderFields();
             if (respBody != null) {
                 resp.body = new String(respBody, StandardCharsets.UTF_8);
@@ -134,18 +135,15 @@ public class HttpRequest {
         } catch (Exception ex) {
             resp.error = ex;
             try {
-                if (con != null) {
+                if (con != null && con.getErrorStream() != null) {
                     resp.body = new String(Utils.unwrapBody(con.getErrorStream()));
+                    resp.status = con.getResponseCode();
                 }
             } catch (Exception ignored) {
             }
             // ex.printStackTrace();
         } finally {
             if (con != null) {
-                try {
-                    resp.status = con.getResponseCode();
-                } catch (IOException ignored) {
-                }
                 con.disconnect();
             }
         }
@@ -153,6 +151,7 @@ public class HttpRequest {
             myRetries++;
             return execute();
         }
+        //System.out.println("took " + (Instant.now().getEpochSecond() - startTime) + " seconds");
         return resp;
     }
 
@@ -172,7 +171,7 @@ public class HttpRequest {
             headers.putAll(getDefaultHeaders());
         if (clientSetting.getHeaders() != null)
             headers.putAll(clientSetting.getHeaders());
-        if (clientSetting.getHeaders() != null)
+        if (requestSetting.getHeaders() != null)
             headers.putAll(requestSetting.getHeaders());
         return headers;
     }
