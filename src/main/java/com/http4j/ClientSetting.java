@@ -8,12 +8,12 @@ public class ClientSetting {
     protected Integer retries;
     protected Integer connectTimeout;
     protected Integer readTimeout;
-    protected Boolean disableDefaultHeaders;
+    protected Boolean defaultHeaders;
     private Map<String, String> headers;
     private String proxy;
 
     public ClientSetting() {
-        disableDefaultHeaders = false;
+        defaultHeaders = false;
     }
 
     public String getProxy() {
@@ -24,12 +24,12 @@ public class ClientSetting {
         this.proxy = proxy;
     }
 
-    public Boolean shouldDisableDefaultHeaders() {
-        return disableDefaultHeaders;
+    public Boolean getDefaultHeaders() {
+        return defaultHeaders;
     }
 
-    public void disableDefaultHeaders() {
-        this.disableDefaultHeaders = true;
+    public void setDefaultHeaders(Boolean defaultHeaders) {
+        this.defaultHeaders = defaultHeaders;
     }
 
     public Integer getConnectTimeout() {

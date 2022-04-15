@@ -23,6 +23,11 @@ public class HttpRequest {
         return this;
     }
 
+    public HttpRequest defaultHeaders(Boolean enabled) {
+        this.clientSetting.defaultHeaders = enabled;
+        return this;
+    }
+
     public HttpRequest header(String name, String value) {
         if (requestSetting.getHeaders() == null) requestSetting.setHeaders(new Hashtable<>());
         requestSetting.getHeaders().put(name, value);
@@ -167,12 +172,10 @@ public class HttpRequest {
 
     private Map<String, String> getHeaders() {
         Map<String, String> headers = new Hashtable<>();
-        if (!clientSetting.shouldDisableDefaultHeaders())
+        if ((clientSetting.defaultHeaders == null || clientSetting.defaultHeaders) && (requestSetting.defaultHeaders == null || requestSetting.defaultHeaders))
             headers.putAll(getDefaultHeaders());
-        if (clientSetting.getHeaders() != null)
-            headers.putAll(clientSetting.getHeaders());
-        if (requestSetting.getHeaders() != null)
-            headers.putAll(requestSetting.getHeaders());
+        if (clientSetting.getHeaders() != null) headers.putAll(clientSetting.getHeaders());
+        if (requestSetting.getHeaders() != null) headers.putAll(requestSetting.getHeaders());
         return headers;
     }
 

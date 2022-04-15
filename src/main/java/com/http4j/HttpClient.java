@@ -68,8 +68,8 @@ public class HttpClient {
             return this;
         }
 
-        public Builder disableDefaultHeaders() {
-            setting.disableDefaultHeaders();
+        public Builder defaultHeaders(Boolean enabled) {
+            setting.defaultHeaders = enabled;
             return this;
         }
 
