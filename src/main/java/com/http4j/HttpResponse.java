@@ -6,7 +6,7 @@ import java.util.Map;
 public class HttpResponse {
 
     public int status;
-    public String body;
+    public byte[] body;
     public Exception error;
     public Map<String, List<String>> headers;
 

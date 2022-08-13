@@ -135,13 +135,13 @@ public class HttpRequest {
             resp.status = con.getResponseCode();
             resp.headers = con.getHeaderFields();
             if (respBody != null) {
-                resp.body = new String(respBody, StandardCharsets.UTF_8);
+                resp.body = respBody;
             }
         } catch (Exception ex) {
             resp.error = ex;
             try {
                 if (con != null && con.getErrorStream() != null) {
-                    resp.body = new String(Utils.unwrapBody(con.getErrorStream()));
+                    resp.body = Utils.unwrapBody(con.getErrorStream());
                     resp.status = con.getResponseCode();
                 }
             } catch (Exception ignored) {
@@ -247,11 +247,11 @@ public class HttpRequest {
         }
         String multipartId = Utils.createMultipartId(24);
         StringBuilder sb = new StringBuilder();
-        multipart.forEach((key, value) -> {
+        for (Map.Entry<String, String> entry : multipart.entrySet()) {
             sb.append("----------------------------").append(multipartId).append("\r\n");
-            sb.append("Content-Disposition: form-data; name=\"").append(key).append("\"\r\n\r\n");
-            sb.append(value).append("\r\n");
-        });
+            sb.append("Content-Disposition: form-data; name=\"").append(entry.getKey()).append("\"\r\n\r\n");
+            sb.append(entry.getValue()).append("\r\n");
+        }
         sb.append("----------------------------").append(multipartId).append("--\r\n");
         requestSetting.setBody(sb.toString().getBytes(StandardCharsets.UTF_8));
         requestSetting.getHeaders().put("Content-Type", "multipart/form-data; boundary=--------------------------" + multipartId);
