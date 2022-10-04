@@ -10,4 +10,9 @@ public class HttpResponse {
     public Exception error;
     public Map<String, List<String>> headers;
 
+    public String getBodyStr() {
+        if (body != null) return new String(body);
+        return null;
+    }
+
 }
