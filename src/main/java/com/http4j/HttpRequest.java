@@ -41,7 +41,7 @@ public class HttpRequest {
 
     public HttpRequest urlParam(String name, String value) {
         if (requestSetting.getUrlParameters() == null) requestSetting.setUrlParameters(new Hashtable<>());
-        requestSetting.getHeaders().put(name, value);
+        requestSetting.getUrlParameters().put(name, value);
         return this;
     }
 
@@ -126,16 +126,18 @@ public class HttpRequest {
                 os.close();
             }
             byte[] respBody = null;
-            if (!requestSetting.shouldSkipResponseBody()) {
-                respBody = Utils.unwrapBody(con.getInputStream());
-            } else {
-                con.getInputStream().close();
-            }
             //con.getErrorStream();
             resp.status = con.getResponseCode();
             resp.headers = con.getHeaderFields();
-            if (respBody != null) {
-                resp.body = respBody;
+            if (con.getResponseCode() != -1) {
+                if (!requestSetting.shouldSkipResponseBody()) {
+                    respBody = Utils.unwrapBody(con.getInputStream());
+                } else {
+                    con.getInputStream().close();
+                }
+                if (respBody != null) {
+                    resp.body = respBody;
+                }
             }
         } catch (Exception ex) {
             resp.error = ex;
@@ -156,7 +158,6 @@ public class HttpRequest {
             myRetries++;
             return execute();
         }
-        //System.out.println("took " + (Instant.now().getEpochSecond() - startTime) + " seconds");
         return resp;
     }
 
@@ -239,6 +240,8 @@ public class HttpRequest {
             return 0;
         }
     }
+
+
 
     private void appendMultipart() {
         Map<String, String> multipart = requestSetting.getMultipart();
