@@ -1,21 +1,26 @@
 package com.http4j;
 
+import okhttp3.*;
+import okhttp3.internal.http2.Header;
+
 import java.io.OutputStream;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Map;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class HttpRequest {
 
     private final RequestSetting requestSetting;
-    private final ClientSetting clientSetting;
+    private final HttpClientSetting clientSetting;
+    private final HttpClient httpClient;
     private int myRetries;
 
-    public HttpRequest(ClientSetting clientSetting, RequestSetting requestSetting) {
+    public HttpRequest(HttpClient httpClient, HttpClientSetting clientSetting, RequestSetting requestSetting) {
         this.clientSetting = clientSetting;
         this.requestSetting = requestSetting;
+        this.httpClient = httpClient;
     }
 
     public HttpRequest headers(Map<String, String> headers) {
@@ -87,6 +92,69 @@ public class HttpRequest {
     }
 
     public HttpResponse execute() {
+        if (clientSetting.getCore() == null || clientSetting.getCore() == HttpClientCore.Java8) {
+            return executeJava8();
+        } else if (clientSetting.getCore() == HttpClientCore.Okhttp) {
+            return executeOkhttp();
+        } else if (clientSetting.getCore() == HttpClientCore.Java11) {
+            return executeJava11();
+        }
+        return null;
+    }
+
+    private HttpResponse executeJava11() {
+        HttpResponse resp = new HttpResponse();
+        try {
+            java.net.http.HttpRequest.Builder builder = java.net.http.HttpRequest.newBuilder()
+                    .uri(new URI(requestSetting.url));
+            if (requestSetting.callTimeout != null) {
+                builder.timeout(Duration.ofSeconds(requestSetting.callTimeout));
+            }
+            getHeaders().forEach(builder::header);
+            switch (requestSetting.getMethod()) {
+                case "GET" -> builder.GET();
+                case "PUT" ->
+                        builder.PUT(java.net.http.HttpRequest.BodyPublishers.ofByteArray(requestSetting.getBody()));
+                case "POST" ->
+                        builder.POST(java.net.http.HttpRequest.BodyPublishers.ofByteArray(requestSetting.getBody()));
+                case "DELETE" -> builder.DELETE();
+            }
+            java.net.http.HttpRequest request = builder.build();
+            java.net.http.HttpResponse<String> response = httpClient.java11HttpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+            resp.status = response.statusCode();
+            resp.headers = response.headers().map();
+            resp.body = response.body().getBytes(StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            resp.error = e;
+        }
+        return resp;
+    }
+
+    private HttpResponse executeOkhttp() {
+        HttpResponse resp = new HttpResponse();
+        Request.Builder req = new Request.Builder()
+                .url(requestSetting.url);
+        getHeaders().forEach(req::header);
+        switch (requestSetting.getMethod()) {
+            case "GET" -> req.get();
+            case "PUT" -> req.put(RequestBody.create(requestSetting.getBody()));
+            case "POST" -> req.post(RequestBody.create(requestSetting.getBody()));
+            case "DELETE" -> req.delete();
+        }
+        try (Response response = httpClient.okHttpClient.newCall(req.build()).execute()) {
+            resp.status = response.code();
+            resp.headers = response.headers().toMultimap();
+            ResponseBody body = response.body();
+            if (body != null) {
+                resp.body = body.bytes();
+            }
+        } catch (Exception e) {
+            resp.error = e;
+        }
+        return resp;
+    }
+
+    public HttpResponse executeJava8() {
         HttpResponse resp = new HttpResponse();
         HttpURLConnection con = null;
         String method = requestSetting.getMethod();
@@ -156,7 +224,7 @@ public class HttpRequest {
         }
         if (resp.status == 0 && myRetries < getRetries() - 1) {
             myRetries++;
-            return execute();
+            return executeJava8();
         }
         return resp;
     }
@@ -240,7 +308,6 @@ public class HttpRequest {
             return 0;
         }
     }
-
 
 
     private void appendMultipart() {

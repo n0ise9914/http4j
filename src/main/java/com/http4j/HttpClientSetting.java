@@ -1,18 +1,26 @@
 package com.http4j;
 
+import java.util.List;
 import java.util.Map;
 
-public class ClientSetting {
+public class HttpClientSetting {
 
+    protected HttpClientCore core;
     protected String url;
     protected Integer retries;
+
+    public List<String> cipherSuites;
+
+    public List<String> tlsVersions;
+    protected Integer callTimeout;
     protected Integer connectTimeout;
     protected Integer readTimeout;
+    protected Integer writeTimeout;
     protected Boolean defaultHeaders;
     private Map<String, String> headers;
     private String proxy;
 
-    public ClientSetting() {
+    public HttpClientSetting() {
         defaultHeaders = false;
     }
 
@@ -70,5 +78,45 @@ public class ClientSetting {
 
     public void setHeaders(Map<String, String> headers) {
         this.headers = headers;
+    }
+
+    public HttpClientCore getCore() {
+        return core;
+    }
+
+    public Integer getWriteTimeout() {
+        return writeTimeout;
+    }
+
+    public void setWriteTimeout(Integer writeTimeout) {
+        this.writeTimeout = writeTimeout;
+    }
+
+    public void setCore(HttpClientCore core) {
+        this.core = core;
+    }
+
+    public Integer getCallTimeout() {
+        return callTimeout;
+    }
+
+    public void setCallTimeout(Integer callTimeout) {
+        this.callTimeout = callTimeout;
+    }
+
+    public List<String> getCipherSuites() {
+        return cipherSuites;
+    }
+
+    public void setCipherSuites(List<String> cipherSuites) {
+        this.cipherSuites = cipherSuites;
+    }
+
+    public List<String> getTlsVersions() {
+        return tlsVersions;
+    }
+
+    public void setTlsVersions(List<String> tlsVersions) {
+        this.tlsVersions = tlsVersions;
     }
 }

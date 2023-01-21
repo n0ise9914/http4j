@@ -2,7 +2,7 @@ package com.http4j;
 
 import java.util.Map;
 
-public class RequestSetting extends ClientSetting {
+public class RequestSetting extends HttpClientSetting {
 
     private String method;
     private Map<String, String> urlParameters;
