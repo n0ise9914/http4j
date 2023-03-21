@@ -3,6 +3,7 @@ package com.http4j;
 import okhttp3.*;
 import okhttp3.internal.http2.Header;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -91,7 +92,7 @@ public class HttpRequest {
         return this;
     }
 
-    public HttpResponse execute() {
+    public HttpResponse execute() throws Exception {
         if (clientSetting.getCore() == null || clientSetting.getCore() == HttpClientCore.Java8) {
             return executeJava8();
         } else if (clientSetting.getCore() == HttpClientCore.Okhttp) {
@@ -102,35 +103,33 @@ public class HttpRequest {
         return null;
     }
 
-    private HttpResponse executeJava11() {
+    private HttpResponse executeJava11() throws Exception {
         HttpResponse resp = new HttpResponse();
-        try {
-            java.net.http.HttpRequest.Builder builder = java.net.http.HttpRequest.newBuilder()
-                    .uri(new URI(requestSetting.url));
-            if (requestSetting.callTimeout != null) {
-                builder.timeout(Duration.ofSeconds(requestSetting.callTimeout));
-            }
-            getHeaders().forEach(builder::header);
-            switch (requestSetting.getMethod()) {
-                case "GET" -> builder.GET();
-                case "PUT" ->
-                        builder.PUT(java.net.http.HttpRequest.BodyPublishers.ofByteArray(requestSetting.getBody()));
-                case "POST" ->
-                        builder.POST(java.net.http.HttpRequest.BodyPublishers.ofByteArray(requestSetting.getBody()));
-                case "DELETE" -> builder.DELETE();
-            }
-            java.net.http.HttpRequest request = builder.build();
-            java.net.http.HttpResponse<String> response = httpClient.java11HttpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
-            resp.status = response.statusCode();
-            resp.headers = response.headers().map();
-            resp.body = response.body().getBytes(StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            resp.error = e;
+        java.net.http.HttpRequest.Builder builder = java.net.http.HttpRequest.newBuilder()
+                .uri(new URI(requestSetting.url));
+        if (requestSetting.callTimeout != null) {
+            builder.timeout(Duration.ofSeconds(requestSetting.callTimeout));
         }
+        if (getHttpVersion() != null) {
+            builder.version(java.net.http.HttpClient.Version.valueOf(getHttpVersion()));
+        }
+        getHeaders().forEach(builder::header);
+        switch (requestSetting.getMethod()) {
+            case "GET" -> builder.GET();
+            case "PUT" -> builder.PUT(java.net.http.HttpRequest.BodyPublishers.ofByteArray(requestSetting.getBody()));
+            case "POST" -> builder.POST(java.net.http.HttpRequest.BodyPublishers.ofByteArray(requestSetting.getBody()));
+            case "DELETE" -> builder.DELETE();
+        }
+        java.net.http.HttpRequest request = builder.build();
+        java.net.http.HttpResponse<String> response = httpClient.java11HttpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+        resp.status = response.statusCode();
+        resp.headers = response.headers().map();
+        resp.body = response.body().getBytes(StandardCharsets.UTF_8);
         return resp;
     }
 
-    private HttpResponse executeOkhttp() {
+
+    private HttpResponse executeOkhttp() throws Exception {
         HttpResponse resp = new HttpResponse();
         Request.Builder req = new Request.Builder()
                 .url(requestSetting.url);
@@ -148,80 +147,80 @@ public class HttpRequest {
             if (body != null) {
                 resp.body = body.bytes();
             }
-        } catch (Exception e) {
-            resp.error = e;
         }
         return resp;
     }
 
-    public HttpResponse executeJava8() {
+    public HttpResponse executeJava8() throws Exception {
         HttpResponse resp = new HttpResponse();
         HttpURLConnection con = null;
         String method = requestSetting.getMethod();
         Map<String, String> headers = getHeaders();
         //long startTime = Instant.now().getEpochSecond();
-        try {
-            appendMultipart();
-            byte[] body = this.requestSetting.getBody();
-            if (method.startsWith("P")) {
-                headers.put("Content-Length", body == null ? "0" : String.valueOf(body.length));
-            }
-            URL _url = new URL(getUrl());
-            String proxyStr = getProxy();
-            if (proxyStr != null && proxyStr.contains(":")) {
-                String[] proxyArr = requestSetting.getProxy().split(":");
-                Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyArr[0], Integer.parseInt(proxyArr[1])));
-                con = (HttpURLConnection) _url.openConnection(proxy);
+//        try {
+        appendMultipart();
+        byte[] body = this.requestSetting.getBody();
+        if (method.startsWith("P")) {
+            headers.put("Content-Length", body == null ? "0" : String.valueOf(body.length));
+        }
+        URL _url = new URL(getUrl());
+        String proxyStr = getProxy();
+        if (proxyStr != null && proxyStr.contains(":")) {
+            String[] proxyArr = requestSetting.getProxy().split(":");
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyArr[0], Integer.parseInt(proxyArr[1])));
+            con = (HttpURLConnection) _url.openConnection(proxy);
+        } else {
+            con = (HttpURLConnection) _url.openConnection();
+        }
+        for (Map.Entry<String, String> header : headers.entrySet()) {
+            con.setRequestProperty(header.getKey(), header.getValue());
+        }
+        con.setUseCaches(false);
+        con.setAllowUserInteraction(false);
+        con.setConnectTimeout(getConnectTimeout());
+        con.setReadTimeout(getReadTimeout());
+        con.setRequestMethod(method);
+        con.setDoOutput(method.startsWith("P"));
+        con.setDoInput(true);
+        con.connect();
+        if (method.startsWith("P")) {
+            if (body == null) body = new byte[]{};
+            OutputStream os = con.getOutputStream();
+            os.write(body);
+            os.flush();
+            os.close();
+        }
+        byte[] respBody = null;
+        //con.getErrorStream();
+        resp.status = con.getResponseCode();
+        resp.headers = con.getHeaderFields();
+        if (con.getResponseCode() != -1) {
+            if (!requestSetting.shouldSkipResponseBody()) {
+                respBody = Utils.unwrapBody(con.getInputStream());
             } else {
-                con = (HttpURLConnection) _url.openConnection();
+                con.getInputStream().close();
             }
-            for (Map.Entry<String, String> header : headers.entrySet()) {
-                con.setRequestProperty(header.getKey(), header.getValue());
-            }
-            con.setUseCaches(false);
-            con.setAllowUserInteraction(false);
-            con.setConnectTimeout(getConnectTimeout());
-            con.setReadTimeout(getReadTimeout());
-            con.setRequestMethod(method);
-            con.setDoOutput(method.startsWith("P"));
-            con.setDoInput(true);
-            con.connect();
-            if (method.startsWith("P")) {
-                if (body == null) body = new byte[]{};
-                OutputStream os = con.getOutputStream();
-                os.write(body);
-                os.flush();
-                os.close();
-            }
-            byte[] respBody = null;
-            //con.getErrorStream();
-            resp.status = con.getResponseCode();
-            resp.headers = con.getHeaderFields();
-            if (con.getResponseCode() != -1) {
-                if (!requestSetting.shouldSkipResponseBody()) {
-                    respBody = Utils.unwrapBody(con.getInputStream());
-                } else {
-                    con.getInputStream().close();
-                }
-                if (respBody != null) {
-                    resp.body = respBody;
-                }
-            }
-        } catch (Exception ex) {
-            resp.error = ex;
-            try {
-                if (con != null && con.getErrorStream() != null) {
-                    resp.body = Utils.unwrapBody(con.getErrorStream());
-                    resp.status = con.getResponseCode();
-                }
-            } catch (Exception ignored) {
-            }
-            // ex.printStackTrace();
-        } finally {
-            if (con != null) {
-                con.disconnect();
+            if (respBody != null) {
+                resp.body = respBody;
             }
         }
+//        }
+//        catch (Exception ex) {
+//            resp.error = ex;
+//            try {
+        if (con != null && con.getErrorStream() != null) {
+            resp.body = Utils.unwrapBody(con.getErrorStream());
+            resp.status = con.getResponseCode();
+            throw new Exception(new String(resp.body));
+        }
+//            } catch (Exception ignored) {
+//            }
+        // ex.printStackTrace();
+//        } finally {
+//            if (con != null) {
+//                con.disconnect();
+//            }
+//        }
         if (resp.status == 0 && myRetries < getRetries() - 1) {
             myRetries++;
             return executeJava8();
@@ -286,6 +285,16 @@ public class HttpRequest {
             return clientSetting.getConnectTimeout();
         } else {
             return 3_000;
+        }
+    }
+
+    private String getHttpVersion() {
+        if (requestSetting.httpVersion != null) {
+            return requestSetting.httpVersion;
+        } else if (clientSetting.httpVersion != null) {
+            return clientSetting.httpVersion;
+        } else {
+            return null;
         }
     }
 

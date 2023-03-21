@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class HttpClientTest {
 
     @Test
-    void testGet() {
+    void testGet() throws Exception {
         HttpClient client = HttpClient.builder().build();
         HttpResponse response = client.get("https://google.com").execute();
         assertEquals(response.status, 200);

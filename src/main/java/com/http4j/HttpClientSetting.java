@@ -7,9 +7,11 @@ public class HttpClientSetting {
 
     protected HttpClientCore core;
     protected String url;
+
+    protected String httpVersion;
     protected Integer retries;
 
-    public List<String> cipherSuites;
+    public String cipherSuites;
 
     public List<String> tlsVersions;
     protected Integer callTimeout;
@@ -104,11 +106,11 @@ public class HttpClientSetting {
         this.callTimeout = callTimeout;
     }
 
-    public List<String> getCipherSuites() {
+    public String getCipherSuites() {
         return cipherSuites;
     }
 
-    public void setCipherSuites(List<String> cipherSuites) {
+    public void setCipherSuites(String cipherSuites) {
         this.cipherSuites = cipherSuites;
     }
 
@@ -118,5 +120,13 @@ public class HttpClientSetting {
 
     public void setTlsVersions(List<String> tlsVersions) {
         this.tlsVersions = tlsVersions;
+    }
+
+    public String getHttpVersion() {
+        return httpVersion;
+    }
+
+    public void setHttpVersion(String httpVersion) {
+        this.httpVersion = httpVersion;
     }
 }

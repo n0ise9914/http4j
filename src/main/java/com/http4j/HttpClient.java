@@ -20,8 +20,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Arrays.asList;
-
 public class HttpClient {
 
     private final HttpClientSetting setting;
@@ -51,18 +49,20 @@ public class HttpClient {
                 builder.callTimeout(setting.callTimeout, TimeUnit.SECONDS);
             }
             try {
-                List<CipherSuite> customCipherSuites = new ArrayList<>();
-                if (setting.cipherSuites != null) {
-                    for (String cipherSuite : setting.cipherSuites) {
+                ConnectionSpec.Builder specBuilder = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS);
+                if (setting.cipherSuites != null && !setting.cipherSuites.equals("")) {
+                    List<CipherSuite> customCipherSuites = new ArrayList<>();
+                    for (String cipherSuite : setting.cipherSuites.split(":")) {
                         customCipherSuites.add(CipherSuite.forJavaName(cipherSuite));
                     }
+                    specBuilder.cipherSuites(customCipherSuites.toArray(new CipherSuite[0]));
                 }
-                ConnectionSpec.Builder specBuilder = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
-                        .cipherSuites(customCipherSuites.toArray(new CipherSuite[0]));
-                if (setting.tlsVersions != null) {
-                    for (String tlsVersion : setting.tlsVersions) {
-                        specBuilder.tlsVersions(TlsVersion.forJavaName(tlsVersion));
+                if (setting.tlsVersions != null && setting.tlsVersions.size() > 0) {
+                    TlsVersion[] versions = new TlsVersion[setting.tlsVersions.size()];
+                    for (int i = 0; i < setting.tlsVersions.size(); i++) {
+                        versions[i] = TlsVersion.forJavaName(setting.tlsVersions.get(i));
                     }
+                    specBuilder.tlsVersions(versions);
                 }
                 ConnectionSpec spec = specBuilder.build();
                 X509TrustManager trustManager = defaultTrustManager();
@@ -209,7 +209,7 @@ public class HttpClient {
             return this;
         }
 
-        public Builder cipherSuites(List<String> cipherSuites) {
+        public Builder cipherSuites(String cipherSuites) {
             setting.setCipherSuites(cipherSuites);
             return this;
         }
@@ -235,6 +235,11 @@ public class HttpClient {
 
         public Builder tlsVersions(List<String> tlsVersions) {
             setting.setTlsVersions(tlsVersions);
+            return this;
+        }
+
+        public Builder httpVersion(String httpVersion) {
+            setting.setHttpVersion(httpVersion);
             return this;
         }
     }
